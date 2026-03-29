@@ -48,14 +48,14 @@ provider "aws" {
 
 ## Usage exemples to Redis
 
-### Redis single zone
+### Redis Single Node (Ready for Replication Scaling)
 
 ```hcl
 module "tf_single_redis" {
   source = "web-virtua-aws-multi-account-modules/elasticache/aws"
 
   name               = "tf-single-redis"
-  num_cache_clusters = 1
+  num_cache_clusters = 1 # Now uses replication group internally to allow scaling without downtime
   availability_zone  = "us-east-1a"
 
   security_group_ids = [
@@ -64,6 +64,30 @@ module "tf_single_redis" {
 
   subnet_ids = [
     "subnet-0eff3...bde8"
+  ]
+
+  providers = {
+    aws = aws.alias_profile_b
+  }
+}
+```
+
+### ElastiCache Serverless (Redis)
+
+```hcl
+module "tf_serverless_redis" {
+  source = "web-virtua-aws-multi-account-modules/elasticache/aws"
+
+  name       = "tf-serverless-redis"
+  serverless = true
+
+  security_group_ids = [
+    "sg-018620a...764c"
+  ]
+
+  subnet_ids = [
+    "subnet-0eff3...bde8",
+    "subnet-0ecce...cfd9"
   ]
 
   providers = {
@@ -227,16 +251,19 @@ module "tf_cluster_memcached" {
 | skip_destroy | `bool` | `false` | no | If false when destroy the log group will be destroyed | `*`false <br> `*`true |
 | kms_key_id | `string` | `null` | no | Log group KMS key ID | `-` |
 | engine | `string` | `redis` | no | ElastiCache engine | `-` |
-| engine_version | `string` | `6.2` | no | ElastiCache engine version | `-` |
-| node_type | `string` | `cache.t3.small` | no | ElastiCache node type | `-` |
+| engine_version | `string` | `7.1` | no | ElastiCache engine version | `-` |
+| node_type | `string` | `cache.t4g.small` | no | ElastiCache node type | `-` |
+| serverless | `bool` | `false` | no | Enable ElastiCache Serverless Cache | `*`false <br> `*`true |
+| serverless_max_storage_gb | `number` | `10` | no | Maximum data storage limit for Serverless (GB) | `-` |
+| serverless_max_ecpu_per_second | `number` | `10000` | no | Maximum ECPU per second limit for Serverless | `-` |
 | port | `number` | `6379` | no | ElastiCache port | `-` |
 | description | `string` | `None` | no | Description to elasticache | `-` |
 | num_cache_clusters | `number` | `0` | no | Number of cache clusters (primary and replicas) this replication group will have. If Multi-AZ is enabled, the value of this parameter must be at least 2. Updates will occur before other modifications. Conflicts with num_node_groups. This will attempt to automatically add or remove replicas, but provides no granular control (e.g., preferred availability zone, cache cluster ID) for the added or removed replicas. This also currently expects cache cluster IDs in the form of replication_group_id-00# | `-` |
 | parameter_group_name | `string` | `null` | no | Name of the parameter group to associate with this replication group. If this argument is omitted, the default cache parameter group for the specified engine is used | `-` |
 | multi_az_enabled | `bool` | `false` | no | Specifies whether to enable Multi-AZ Support for the replication group. If true, automatic_failover_enabled must also be enabled | `*`false <br> `*`true |
 | az_mode | `string` | `single-az` | no | Can be single-az or cross-az, is optional for Memcached only, whether the nodes in this Memcached node group are created in a single Availability Zone or created across multiple Availability Zones in the cluster's region. Valid values for this parameter are single-az or cross-az, default is single-az. If you want to choose cross-az, num_cache_nodes must be greater than 1 | `*`single-az <br> `*`cross-az |
-| availability_zone | `string` | `null` | no | Availability Zone for the cache cluster. If you want to create cache nodes in multi-az, use preferred_availability_zones instead. Default: System chosen Availability Zone. Changing this value will re-create the resource | `-` |
-| preferred_availability_zones | `list(string)` | `null` | no | It's only to Memcached, a list of the Availability Zones in which cache nodes are created | `-` |
+| availability_zone | `string` | `null` | no | Availability Zone for the cache cluster (or primary node in Replication Group). Must match one of the subnet AZs. | `-` |
+| preferred_availability_zones | `list(string)` | `null` | no | A list of Availability Zones in which cache nodes are created. For Redis Replication Groups, this defines the preferred AZs for all nodes. | `-` |
 | apply_immediately | `bool` | `true` | no | Whether any database modifications are applied immediately, or during the next maintenance window | `*`false <br> `*`true |
 | auto_minor_version_upgrade | `bool` | `true` | no | Specifies whether minor version engine upgrades will be applied automatically to the underlying Cache Cluster instances during the maintenance window. Only supported for engine type redis and if the engine version is 6 or higher. Defaults to true | `*`false <br> `*`true |
 | final_snapshot_name | `string` | `null` | no | Final snapshot name to ElastiCache when destroy resource | `-` |
@@ -274,6 +301,7 @@ module "tf_cluster_memcached" {
 |------|------|
 | [aws_elasticache_cluster.create_cluster](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/elasticache_cluster) | resource |
 | [aws_elasticache_replication_group.create_replication_group](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/elasticache_replication_group) | resource |
+| [aws_elasticache_serverless_cache.create_serverless](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/elasticache_serverless_cache) | resource |
 | [aws_elasticache_subnet_group.create_subnet_group](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/elasticache_subnet_group) | resource |
 | [aws_cloudwatch_log_group.create_log_group](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_log_group) | resource |
 
@@ -293,3 +321,6 @@ module "tf_cluster_memcached" {
 | `elasticache_snapshot_window` | Elasticache snapshot window |
 | `elasticache_primary_endpoint_address` | Elasticache primary endpoint address |
 | `elasticache_reader_endpoint_address` | Elasticache reader endpoint address |
+| `elasticache_serverless_endpoint` | Elasticache Serverless endpoint |
+| `elasticache_serverless_reader_endpoint` | Elasticache Serverless reader endpoint |
+| `elasticache_serverless_port` | Elasticache Serverless port |

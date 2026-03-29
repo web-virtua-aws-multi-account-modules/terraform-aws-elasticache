@@ -1,32 +1,32 @@
 output "elasticache" {
   description = "Elasticache"
-  value       = try(aws_elasticache_cluster.create_cluster[0], aws_elasticache_replication_group.create_replication_group[0])
-  sensitive = true
+  value       = try(aws_elasticache_cluster.create_cluster[0], aws_elasticache_replication_group.create_replication_group[0], aws_elasticache_serverless_cache.create_serverless[0], null)
+  sensitive   = true
 }
 
 output "elasticache_arn" {
   description = "Elasticache ARN"
-  value       = try(aws_elasticache_cluster.create_cluster[0].arn, aws_elasticache_replication_group.create_replication_group[0].arn)
+  value       = try(aws_elasticache_cluster.create_cluster[0].arn, aws_elasticache_replication_group.create_replication_group[0].arn, aws_elasticache_serverless_cache.create_serverless[0].arn, null)
 }
 
 output "elasticache_cluster_address" {
   description = "Elasticache cluster address"
-  value       = try(aws_elasticache_cluster.create_cluster[0].cluster_address, aws_elasticache_replication_group.create_replication_group[0].primary_endpoint_address)
+  value       = try(aws_elasticache_cluster.create_cluster[0].cluster_address, aws_elasticache_replication_group.create_replication_group[0].primary_endpoint_address, aws_elasticache_serverless_cache.create_serverless[0].endpoint[0].address, null)
 }
 
 output "elasticache_configuration_endpoint" {
   description = "Elasticache configuration endpoint"
-  value       = try(aws_elasticache_cluster.create_cluster[0].configuration_endpoint, aws_elasticache_replication_group.create_replication_group[0].configuration_endpoint_address)
+  value       = try(aws_elasticache_cluster.create_cluster[0].configuration_endpoint, aws_elasticache_replication_group.create_replication_group[0].configuration_endpoint_address, aws_elasticache_serverless_cache.create_serverless[0].endpoint[0].address, null)
 }
 
 output "elasticache_engine_version_actual" {
   description = "Elasticache engine version actual"
-  value       = try(aws_elasticache_cluster.create_cluster[0].engine_version_actual, aws_elasticache_replication_group.create_replication_group[0].engine_version_actual)
+  value       = try(aws_elasticache_cluster.create_cluster[0].engine_version_actual, aws_elasticache_replication_group.create_replication_group[0].engine_version_actual, aws_elasticache_serverless_cache.create_serverless[0].major_engine_version, null)
 }
 
 output "elasticache_port" {
   description = "Elasticache port"
-  value       = try(aws_elasticache_cluster.create_cluster[0].port, aws_elasticache_replication_group.create_replication_group[0].port)
+  value       = try(aws_elasticache_cluster.create_cluster[0].port, aws_elasticache_replication_group.create_replication_group[0].port, aws_elasticache_serverless_cache.create_serverless[0].endpoint[0].port, null)
 }
 
 output "elasticache_ip_discovery" {
@@ -36,17 +36,17 @@ output "elasticache_ip_discovery" {
 
 output "elasticache_maintenance_window" {
   description = "Elasticache maintenance window"
-  value       = try(aws_elasticache_cluster.create_cluster[0].maintenance_window, aws_elasticache_replication_group.create_replication_group[0].maintenance_window)
+  value       = try(aws_elasticache_cluster.create_cluster[0].maintenance_window, aws_elasticache_replication_group.create_replication_group[0].maintenance_window, null)
 }
 
 output "elasticache_parameter_group_name" {
   description = "Elasticache parameter group name"
-  value       = try(aws_elasticache_cluster.create_cluster[0].parameter_group_name, aws_elasticache_replication_group.create_replication_group[0].parameter_group_name)
+  value       = try(aws_elasticache_cluster.create_cluster[0].parameter_group_name, aws_elasticache_replication_group.create_replication_group[0].parameter_group_name, null)
 }
 
 output "elasticache_snapshot_window" {
   description = "Elasticache snapshot window"
-  value       = try(aws_elasticache_cluster.create_cluster[0].snapshot_window, aws_elasticache_replication_group.create_replication_group[0].snapshot_window)
+  value       = try(aws_elasticache_cluster.create_cluster[0].snapshot_window, aws_elasticache_replication_group.create_replication_group[0].snapshot_window, aws_elasticache_serverless_cache.create_serverless[0].daily_snapshot_time, null)
 }
 
 output "elasticache_primary_endpoint_address" {
@@ -57,4 +57,19 @@ output "elasticache_primary_endpoint_address" {
 output "elasticache_reader_endpoint_address" {
   description = "Elasticache reader endpoint address"
   value       = try(aws_elasticache_replication_group.create_replication_group[0].reader_endpoint_address, null)
+}
+
+output "elasticache_serverless_endpoint" {
+  description = "Elasticache Serverless endpoint"
+  value       = try(aws_elasticache_serverless_cache.create_serverless[0].endpoint[0].address, null)
+}
+
+output "elasticache_serverless_reader_endpoint" {
+  description = "Elasticache Serverless reader endpoint"
+  value       = try(aws_elasticache_serverless_cache.create_serverless[0].reader_endpoint[0].address, null)
+}
+
+output "elasticache_serverless_port" {
+  description = "Elasticache Serverless port"
+  value       = try(aws_elasticache_serverless_cache.create_serverless[0].endpoint[0].port, null)
 }

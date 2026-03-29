@@ -71,13 +71,31 @@ variable "engine" {
 variable "engine_version" {
   description = "ElastiCache engine version"
   type        = string
-  default     = "6.2"
+  default     = "7.1"
 }
 
 variable "node_type" {
   description = "ElastiCache node type"
   type        = string
-  default     = "cache.t3.small"
+  default     = "cache.t4g.small"
+}
+
+variable "serverless" {
+  description = "Enable ElastiCache Serverless Cache. Overrides node_type and num_cache_clusters."
+  type        = bool
+  default     = false
+}
+
+variable "serverless_max_storage_gb" {
+  description = "Maximum data storage limit for Serverless (GB). Default is 10 GB."
+  type        = number
+  default     = 10
+}
+
+variable "serverless_max_ecpu_per_second" {
+  description = "Maximum ECPU per second limit for Serverless. Default is 10000."
+  type        = number
+  default     = 10000
 }
 
 variable "port" {

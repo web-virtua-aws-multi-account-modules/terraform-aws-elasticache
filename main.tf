@@ -37,7 +37,7 @@ resource "aws_cloudwatch_log_group" "create_log_group" {
 }
 
 resource "aws_elasticache_cluster" "create_cluster" {
-  count = (var.num_cache_clusters == 1 || var.engine == "memcached") ? 1 : 0
+  count = (!var.serverless && var.engine == "memcached") ? 1 : 0
 
   cluster_id                   = var.name
   engine                       = var.engine
@@ -80,7 +80,7 @@ resource "aws_elasticache_cluster" "create_cluster" {
 }
 
 resource "aws_elasticache_replication_group" "create_replication_group" {
-  count = ((var.num_cache_clusters == 0 || var.num_cache_clusters > 1) && var.engine == "redis") ? 1 : 0
+  count = (!var.serverless && var.engine == "redis") ? 1 : 0
 
   replication_group_id        = var.name
   description                 = var.description
@@ -94,7 +94,7 @@ resource "aws_elasticache_replication_group" "create_replication_group" {
   auto_minor_version_upgrade  = var.auto_minor_version_upgrade
   security_group_ids          = var.security_group_ids
   subnet_group_name           = try(aws_elasticache_subnet_group.create_subnet_group[0].name, var.subnet_group_name)
-  preferred_cache_cluster_azs = var.preferred_availability_zones
+  preferred_cache_cluster_azs = var.preferred_availability_zones != null ? var.preferred_availability_zones : (var.availability_zone != null ? [var.availability_zone] : null)
   multi_az_enabled            = var.multi_az_enabled
   final_snapshot_identifier   = var.final_snapshot_name
   maintenance_window          = var.maintenance_window
@@ -122,4 +122,30 @@ resource "aws_elasticache_replication_group" "create_replication_group" {
     log_format       = var.log_format_log_group
     log_type         = var.log_type_log_group
   }
+}
+
+resource "aws_elasticache_serverless_cache" "create_serverless" {
+  count = var.serverless ? 1 : 0
+
+  name                     = var.name
+  engine                   = var.engine
+  description              = var.description != "None" ? var.description : null
+  major_engine_version     = split(".", var.engine_version)[0]
+  security_group_ids       = var.security_group_ids
+  subnet_ids               = var.subnet_ids
+  kms_key_id               = var.kms_key_id
+  daily_snapshot_time      = var.snapshot_window
+  snapshot_retention_limit = var.snapshot_retention_limit != null ? var.snapshot_retention_limit : var.retention_in_days
+
+  cache_usage_limits {
+    data_storage {
+      maximum = var.serverless_max_storage_gb
+      unit    = "GB"
+    }
+    ecpu_per_second {
+      maximum = var.serverless_max_ecpu_per_second
+    }
+  }
+
+  tags = merge(var.tags, var.use_tags_default ? local.tags_default : {})
 }
